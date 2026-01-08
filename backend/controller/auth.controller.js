@@ -1,39 +1,96 @@
-const User = require("../models/user");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+
+const sanitizeUser = (user) => ({
+  id: user._id,
+  name: user.name,
+  username: user.username,
+  email: user.email,
+  role: user.role,
+  bio: user.bio,
+  avatar: user.avatar,
+  skills: user.skills,
+  experienceLevel: user.experienceLevel,
+  location: user.location,
+  github: user.github,
+  linkedin: user.linkedin,
+  portfolio: user.portfolio,
+  projects: user.projects,
+  savedProjects: user.savedProjects,
+  followers: user.followers,
+  following: user.following,
+  isVerified: user.isVerified,
+  isActive: user.isActive,
+  lastLogin: user.lastLogin,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt,
+});
+
+const signToken = (userId, role) =>
+  jwt.sign({ id: userId, role }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
 
 // REGISTER
 exports.register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, username, email, password, skills, ...rest } = req.body;
+
+  if (!name || !username || !email || !password) {
+    return res.status(400).json({ message: "name, username, email, password required" });
+  }
 
   try {
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({
+      $or: [{ email }, { username }],
+    });
     if (userExists)
-      return res.status(400).json({ message: "User already exists" });
-
+      return res.status(400).json({ message: "Email or username already in use" });
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    const avatarPath = req.file ? `/uploads/avatars/${req.file.filename}` : rest.avatar;
+    const normalizedSkills = Array.isArray(skills)
+      ? skills.filter(Boolean)
+      : typeof skills === "string"
+        ? skills
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
 
     const user = await User.create({
       name,
+      username,
       email,
       password: hashedPassword,
+      avatar: avatarPath,
+      skills: normalizedSkills,
+      ...rest,
     });
+
+    const token = signToken(user._id, user.role);
 
     res.status(201).json({
       message: "User registered successfully",
-      userId: user._id,
+      token,
+      user: sanitizeUser(user),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// LOGIN
+// LOGIN (email or username + password)
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, username, password } = req.body;
+
+  if (!password || (!email && !username)) {
+    return res.status(400).json({ message: "Provide email or username and password" });
+  }
 
   try {
-    const user = await User.findOne({ email });
+    const query = email ? { email } : { username };
+    const user = await User.findOne(query);
     if (!user)
       return res.status(400).json({ message: "Invalid credentials" });
 
@@ -41,21 +98,21 @@ exports.login = async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    user.lastLogin = new Date();
+    await user.save({ validateBeforeSave: false });
+
+    const token = signToken(user._id, user.role);
 
     res.json({
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-      },
+      user: sanitizeUser(user),
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+};
+
+// CURRENT USER
+exports.me = async (req, res) => {
+  res.json({ user: sanitizeUser(req.user) });
 };

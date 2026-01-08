@@ -1,0 +1,217 @@
+:root {
+  --page-bg: #040305;
+  --page-panel: rgba(13, 14, 20, 0.88);
+  --page-border: rgba(255, 255, 255, 0.08);
+  --page-text: #f6f7fb;
+  --page-muted: #b3b7c9;
+  --page-accent: #f5b400;
+}
+
+.page-shell {
+  min-height: calc(100vh - 80px);
+  padding: clamp(96px, 12vw, 160px) clamp(20px, 6vw, 96px) 120px;
+  background: radial-gradient(circle at 20% 20%, rgba(245, 180, 0, 0.08), transparent 55%),
+    radial-gradient(circle at 80% 0%, rgba(83, 92, 190, 0.15), transparent 45%),
+    var(--page-bg);
+  color: var(--page-text);
+}
+
+.page-header {
+  max-width: 720px;
+  margin: 0 auto 48px;
+  text-align: center;
+}
+
+.page-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  font-size: 12px;
+  color: var(--page-muted);
+  margin-bottom: 12px;
+}
+
+.page-header h1 {
+  font-size: clamp(32px, 6vw, 60px);
+  margin: 0 0 12px;
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  font-size: 18px;
+  color: var(--page-muted);
+  margin: 0;
+}
+
+.page-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.page-grid--feed {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.page-card {
+  border: 1px solid var(--page-border);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--page-panel);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.page-card--accent {
+  background: linear-gradient(140deg, rgba(245, 180, 0, 0.2), rgba(20, 20, 24, 0.9));
+  border-color: rgba(245, 180, 0, 0.4);
+}
+
+.page-card h3 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.page-card p {
+  margin: 0 0 16px;
+  color: var(--page-muted);
+}
+
+.page-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--page-muted);
+}
+
+.page-tag {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 12px;
+}
+
+.page-empty {
+  border: 1px dashed var(--page-border);
+  border-radius: 14px;
+  padding: 32px;
+  text-align: center;
+  color: var(--page-muted);
+}
+
+.page-alert {
+  border-radius: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--page-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--page-text);
+}
+
+.page-alert.success {
+  border-color: rgba(50, 205, 111, 0.4);
+  background: rgba(50, 205, 111, 0.08);
+}
+
+.page-alert.error {
+  border-color: rgba(255, 99, 99, 0.4);
+  background: rgba(255, 99, 99, 0.08);
+}
+
+.page-form {
+  display: grid;
+  gap: 18px;
+}
+
+.page-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.page-form input,
+.page-form textarea {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--page-text);
+  padding: 12px 14px;
+  font-size: 15px;
+}
+
+.page-form textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.page-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.page-button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.page-button.primary {
+  background: var(--page-accent);
+  color: #050505;
+  box-shadow: 0 16px 32px rgba(245, 180, 0, 0.35);
+}
+
+.page-button.secondary {
+  background: transparent;
+  border: 1px solid var(--page-border);
+  color: var(--page-text);
+}
+
+.page-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.page-profile {
+  display: grid;
+  gap: 28px;
+}
+
+.page-profile__card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.page-profile__avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .page-shell {
+    padding-top: 120px;
+  }
+
+  .page-profile__card {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .page-actions {
+    justify-content: stretch;
+    flex-direction: column;
+  }
+}
