@@ -1,14 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@500;600;700&display=swap");
 
 :root {
-	--bg: #070708;
-	--surface: #0d0e14;
-	--panel: #12131c;
-	--border: #1d1f2b;
-	--text: #f7f8fb;
-	--muted: #9ca2b5;
+	--bg: #f7f9fc;
+	--surface: #ffffff;
+	--panel: #f1f5fb;
+	--border: #dce3f0;
+	--text: #0f172a;
+	--muted: #64748b;
 	--accent: #f5b400;
-	--shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+	--shadow: 0 18px 50px rgba(15, 23, 42, 0.12);
 }
 
 * {
@@ -139,23 +139,23 @@ a {
 
 .btn.primary {
 	background: var(--accent);
-	color: #0a0a0d;
-	box-shadow: 0 10px 30px rgba(245, 180, 0, 0.3);
+	color: #111827;
+	box-shadow: 0 12px 30px rgba(245, 180, 0, 0.28);
 	border-color: var(--accent);
 }
 
 .btn.primary:hover {
 	transform: translateY(-1px);
-	box-shadow: 0 12px 34px rgba(245, 180, 0, 0.35);
+	box-shadow: 0 14px 36px rgba(245, 180, 0, 0.32);
 }
 
 .btn.ghost {
-	background: transparent;
+	background: rgba(15, 23, 42, 0.04);
 	color: var(--text);
 }
 
 .btn.ghost:hover {
-	border-color: #2c2f3d;
+	border-color: rgba(15, 23, 42, 0.24);
 	transform: translateY(-1px);
 }
 
@@ -291,7 +291,8 @@ a {
 
 .feature-card:hover {
 	transform: translateY(-3px);
-	border-color: #2a2c39;
+	border-color: rgba(245, 196, 0, 0.5);
+	box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
 }
 
 .pop-card {
@@ -300,19 +301,19 @@ a {
 
 .pop-card:hover {
 	transform: translateY(-6px) scale(1.01);
-	box-shadow: 0 16px 44px rgba(0, 0, 0, 0.35);
-	border-color: rgba(245, 180, 0, 0.25);
+	box-shadow: 0 20px 48px rgba(15, 23, 42, 0.16);
+	border-color: rgba(245, 180, 0, 0.35);
 }
 
 .badge {
 	display: inline-flex;
 	padding: 6px 10px;
 	border-radius: 10px;
-	background: #1d1f2b;
-	color: var(--accent);
+	background: rgba(245, 196, 0, 0.16);
+	color: #111827;
 	font-weight: 700;
 	font-size: 12px;
-	border: 1px solid var(--border);
+	border: 1px solid rgba(245, 196, 0, 0.4);
 }
 
 .feature-card h3 {

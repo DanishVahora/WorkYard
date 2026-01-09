@@ -79,17 +79,6 @@ export default function SignupPage() {
 		return true;
 	};
 
-	const handleNext = () => {
-		if (!validateStep()) {
-			setStatus("error");
-			setMessage("Please fill required fields for this step");
-			return;
-		}
-		setStatus("idle");
-		setMessage("");
-		setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
-	};
-
 	const handleBack = () => {
 		setStatus("idle");
 		setMessage("");
@@ -101,6 +90,12 @@ export default function SignupPage() {
 		if (!validateStep()) {
 			setStatus("error");
 			setMessage("Please fill required fields for this step");
+			return;
+		}
+		if (stepIndex < steps.length - 1) {
+			setStatus("idle");
+			setMessage("");
+			setStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
 			return;
 		}
 		if (form.password !== form.confirmPassword) {
@@ -131,10 +126,23 @@ export default function SignupPage() {
 				body: data,
 			});
 
-			const body = await response.json();
+			let body: { message?: string } = {};
+			let responseText = "";
+
+			const contentType = response.headers.get("content-type") || "";
+			if (contentType.includes("application/json")) {
+				try {
+					body = (await response.json()) as { message?: string };
+				} catch (parseError) {
+					console.warn("Unable to parse signup JSON response", parseError);
+				}
+			} else {
+				responseText = await response.text();
+			}
 
 			if (!response.ok) {
-				throw new Error(body.message || "Unable to create account");
+				const fallback = body.message || responseText || `Request failed with status ${response.status}`;
+				throw new Error(fallback);
 			}
 
 			setStatus("success");
@@ -392,12 +400,7 @@ export default function SignupPage() {
 								Back
 							</button>
 							{stepIndex < steps.length - 1 ? (
-								<button
-									type="button"
-									className="primary"
-									onClick={handleNext}
-									disabled={status === "loading"}
-								>
+								<button className="primary" type="submit" disabled={status === "loading"}>
 									Next
 								</button>
 							) : (

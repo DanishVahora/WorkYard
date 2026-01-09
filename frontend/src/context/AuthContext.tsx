@@ -6,22 +6,16 @@ import React, {
   useMemo,
   useState,
 } from "react";
-
-type AuthUser = Record<string, unknown> & {
-  id?: string;
-  name?: string;
-  username?: string;
-  email?: string;
-  avatar?: string;
-};
+import type { User } from "../types/user";
 
 type AuthContextValue = {
-  user: AuthUser | null;
+  user: User | null;
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (payload: { user: AuthUser; token: string }) => void;
+  login: (payload: { user: User; token: string }) => void;
   logout: () => void;
+  updateUser: (updater: (prev: User | null) => User | null) => void;
 };
 
 const STORAGE_KEY = "workyard.auth";
@@ -39,14 +33,14 @@ function readPersistedAuth() {
   }
 
   try {
-    return JSON.parse(raw) as { user: AuthUser; token: string };
+    return JSON.parse(raw) as { user: User; token: string };
   } catch (err) {
     console.warn("Unable to parse auth payload", err);
     return null;
   }
 }
 
-function writePersistedAuth(payload: { user: AuthUser; token: string } | null) {
+function writePersistedAuth(payload: { user: User; token: string } | null) {
   if (typeof window === "undefined") {
     return;
   }
@@ -60,7 +54,7 @@ function writePersistedAuth(payload: { user: AuthUser; token: string } | null) {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -73,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = useCallback(({ user: nextUser, token: nextToken }: { user: AuthUser; token: string }) => {
+  const login = useCallback(({ user: nextUser, token: nextToken }: { user: User; token: string }) => {
     setUser(nextUser);
     setToken(nextToken);
     writePersistedAuth({ user: nextUser, token: nextToken });
@@ -85,6 +79,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     writePersistedAuth(null);
   }, []);
 
+  const updateUser = useCallback(
+    (updater: (prev: User | null) => User | null) => {
+      setUser((prev) => {
+        const next = updater(prev);
+        if (token) {
+          writePersistedAuth(next ? { user: next, token } : null);
+        }
+        return next;
+      });
+    },
+    [token]
+  );
+
   const value = useMemo(
     () => ({
       user,
@@ -93,8 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(token),
       login,
       logout,
+      updateUser,
     }),
-    [user, token, loading, login, logout]
+    [user, token, loading, login, logout, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

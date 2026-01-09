@@ -1,31 +1,7 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-
-const sanitizeUser = (user) => ({
-  id: user._id,
-  name: user.name,
-  username: user.username,
-  email: user.email,
-  role: user.role,
-  bio: user.bio,
-  avatar: user.avatar,
-  skills: user.skills,
-  experienceLevel: user.experienceLevel,
-  location: user.location,
-  github: user.github,
-  linkedin: user.linkedin,
-  portfolio: user.portfolio,
-  projects: user.projects,
-  savedProjects: user.savedProjects,
-  followers: user.followers,
-  following: user.following,
-  isVerified: user.isVerified,
-  isActive: user.isActive,
-  lastLogin: user.lastLogin,
-  createdAt: user.createdAt,
-  updatedAt: user.updatedAt,
-});
+const { sanitizeUser } = require("../utils/sanitize");
 
 const signToken = (userId, role) =>
   jwt.sign({ id: userId, role }, process.env.JWT_SECRET, {
@@ -76,7 +52,17 @@ exports.register = async (req, res) => {
       user: sanitizeUser(user),
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Error during user registration", err);
+
+    if (err?.code === 11000) {
+      return res.status(409).json({
+        message: "Email or username already in use",
+      });
+    }
+
+    const status = err?.status || err?.statusCode || (err?.name === "ValidationError" ? 400 : 500);
+
+    res.status(status).json({ message: err?.message || "Internal server error" });
   }
 };
 

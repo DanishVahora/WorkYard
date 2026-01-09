@@ -14,6 +14,10 @@ import SavedPage from './pages/SavedPage'
 import NotificationsPage from './pages/NotificationsPage'
 import ProfilePage from './pages/ProfilePage'
 import ProtectedRoute from './components/ProtectedRoute'
+import ProjectDetailPage from './pages/ProjectDetailPage'
+import EditProjectPage from './pages/EditProjectPage'
+import PeoplePage from './pages/PeoplePage'
+import UserProfilePage from './pages/UserProfilePage'
 
 function App() {
   return (
@@ -32,10 +36,35 @@ function App() {
           }
         />
         <Route
+          path="/people"
+          element={
+            <ProtectedRoute>
+              <PeoplePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/projects/new"
           element={
             <ProtectedRoute>
               <AddProjectPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/projects/:id/edit"
+          element={
+            <ProtectedRoute>
+              <EditProjectPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/projects/:id" element={<ProjectDetailPage />} />
+        <Route
+          path="/users/:id"
+          element={
+            <ProtectedRoute>
+              <UserProfilePage />
             </ProtectedRoute>
           }
         />

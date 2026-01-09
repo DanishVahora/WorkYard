@@ -6,6 +6,7 @@ import "../styles/Navbar.css";
 type IconName =
 	| "feed"
 	| "explore"
+	| "people"
 	| "add"
 	| "saved"
 	| "notifications"
@@ -50,6 +51,15 @@ function Icon({ name }: { name: IconName }) {
 				<svg {...sharedProps}>
 					<circle cx={12} cy={12} r={9} />
 					<path d="M9.5 14.5l1.5-4.5 4.5-1.5-1.5 4.5z" />
+				</svg>
+			);
+		case "people":
+			return (
+				<svg {...sharedProps}>
+					<circle cx={9} cy={10} r={3} />
+					<circle cx={17} cy={10} r={3} />
+					<path d="M4 19c1.2-3 3.6-4 5.5-4s4.3 1 5.5 4" />
+					<path d="M11.5 19c1.2-3 3.6-4 5.5-4 1.1 0 2.3.3 3.5 1" />
 				</svg>
 			);
 		case "add":
@@ -125,6 +135,7 @@ export default function Navbar() {
 			return [
 				{ label: "Feed", to: "/feed", icon: "feed" },
 				{ label: "Explore", to: "/explore", icon: "explore" },
+				{ label: "People", to: "/people", icon: "people" },
 				{ label: "Add Project", to: "/projects/new", variant: "primary", icon: "add" },
 				{ label: "Saved", to: "/saved", icon: "saved" },
 				{ label: "Notifications", to: "/notifications", icon: "notifications" },

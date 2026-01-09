@@ -1,19 +1,54 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import ProjectCard from "../components/ProjectCard";
+import { useAuth } from "../context/AuthContext";
+import { apiFetch } from "../lib/api";
+import type { Project } from "../types/project";
 
-const savedItems = [
-  {
-    title: "Atlas team rituals",
-    summary: "Weekly pattern review for open design systems.",
-    tags: ["Process", "Design Ops"],
-  },
-  {
-    title: "Lumen renderer",
-    summary: "Realtime GI explorer for WebGPU.",
-    tags: ["Graphics", "WebGPU"],
-  },
-];
+type SavedProjectsResponse = {
+  projects: Project[];
+};
 
 export default function SavedPage() {
+  const { token } = useAuth();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSaved() {
+      if (!token) {
+        setError("Sign in to view saved projects.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await apiFetch<SavedProjectsResponse>("/api/projects/saved", { token });
+        if (!cancelled) {
+          setProjects(response.projects || []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Unable to load saved projects");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadSaved();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
   return (
     <main className="page-shell">
       <header className="page-header">
@@ -22,22 +57,16 @@ export default function SavedPage() {
         <p className="page-subtitle">Revisit projects you want to learn from or support.</p>
       </header>
 
-      {savedItems.length === 0 ? (
+      {error && <div className="page-alert error">{error}</div>}
+
+      {loading ? (
+        <div style={{ textAlign: "center", color: "var(--page-muted)" }}>Loading saved projects…</div>
+      ) : projects.length === 0 ? (
         <div className="page-empty">You have not saved any projects yet.</div>
       ) : (
-        <div className="page-grid">
-          {savedItems.map((item) => (
-            <article key={item.title} className="page-card">
-              <h3>{item.title}</h3>
-              <p>{item.summary}</p>
-              <div className="page-card__meta">
-                {item.tags.map((tag) => (
-                  <span key={tag} className="page-tag">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </article>
+        <div className="page-grid page-grid--feed">
+          {projects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
           ))}
         </div>
       )}
