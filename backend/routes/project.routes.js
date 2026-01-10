@@ -9,6 +9,10 @@ const {
   listSavedProjects,
   saveProject,
   unsaveProject,
+  getProjectComments,
+  addComment,
+  likeProject,
+  unlikeProject,
 } = require("../controller/project.controller");
 const { protect } = require("../middleware/auth.middleware");
 const { uploadProjectMedia } = require("../middleware/upload.middleware");
@@ -29,6 +33,10 @@ router.post(
 );
 router.post("/:id/save", protect, saveProject);
 router.delete("/:id/save", protect, unsaveProject);
+router.get("/:id/comments", getProjectComments);
+router.post("/:id/comments", protect, addComment);
+router.post("/:id/like", protect, likeProject);
+router.delete("/:id/like", protect, unlikeProject);
 router.get("/:id", getProjectById);
 router.patch(
   "/:id",

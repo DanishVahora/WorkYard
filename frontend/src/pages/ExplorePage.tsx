@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import ProjectCard from "../components/ProjectCard";
 import { apiFetch } from "../lib/api";
 import type { Project, ProjectListResponse } from "../types/project";
@@ -11,6 +12,22 @@ export default function ExplorePage() {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const activeTag = useMemo(() => {
+    const raw = searchParams.get("tag")?.trim();
+    if (!raw) return "";
+    return raw.replace(/^#+/, "");
+  }, [searchParams]);
+
+  useEffect(() => {
+    setProjects([]);
+    setPage(1);
+    setHasMore(true);
+    setLoading(false);
+    setError(null);
+  }, [activeTag]);
 
   useEffect(() => {
     let cancelled = false;
@@ -20,7 +37,11 @@ export default function ExplorePage() {
       try {
         setLoading(true);
         setError(null);
-        const response = await apiFetch<ProjectListResponse>(`/api/projects?page=${page}&limit=${PAGE_SIZE}`);
+        const params = new URLSearchParams({ page: String(page), limit: String(PAGE_SIZE) });
+        if (activeTag) {
+          params.set("tags", activeTag);
+        }
+        const response = await apiFetch<ProjectListResponse>(`/api/projects?${params.toString()}`);
         if (cancelled) return;
 
         setProjects((prev) => (page === 1 ? response.projects : [...prev, ...response.projects]));
@@ -42,20 +63,13 @@ export default function ExplorePage() {
     return () => {
       cancelled = true;
     };
-  }, [page]);
+  }, [page, activeTag]);
 
   const showLoadMore = useMemo(() => hasMore && projects.length > 0, [hasMore, projects.length]);
+  const emptyMessage = activeTag ? `No projects found for #${activeTag}` : "No projects published yet.";
 
   return (
     <main className="page-shell">
-      <header className="page-header">
-        <p className="page-kicker">Explore</p>
-        <h1>Follow the builders shaping the next wave</h1>
-        <p className="page-subtitle">
-          Discover public launches, request intros, and follow roadmaps from founders shipping in public.
-        </p>
-      </header>
-
       {error && <div className="page-alert error">{error}</div>}
 
       <div className="page-grid page-grid--feed">

@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const { sanitizeUser, summarizeUser, isValidObjectId } = require("../utils/sanitize");
+const { createNotification } = require("../services/notification.service");
 
 function getCurrentUserId(req) {
   if (!req.user) {
@@ -46,10 +47,14 @@ exports.followUser = async (req, res) => {
   }
 
   try {
-    const target = await User.findById(id).select("-password");
+    const target = await User.findById(id).select("followers");
     if (!target) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    const alreadyFollowing = Array.isArray(target.followers)
+      ? target.followers.some((value) => value.toString() === currentUserId)
+      : false;
 
     await Promise.all([
       User.updateOne({ _id: currentUserId }, { $addToSet: { following: target._id } }),
@@ -60,6 +65,16 @@ exports.followUser = async (req, res) => {
       User.findById(currentUserId).select("-password"),
       User.findById(id).select("-password"),
     ]);
+
+    if (!alreadyFollowing) {
+      createNotification({
+        recipientId: updatedTarget._id,
+        actorId: req.user._id,
+        type: "follow",
+      }).catch((error) => {
+        console.warn("Unable to dispatch follow notification", error);
+      });
+    }
 
     res.json({
       message: "Followed",

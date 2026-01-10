@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { apiFetch, resolveMediaUrl } from "../lib/api";
+import { addProjectComment, apiFetch, resolveMediaUrl } from "../lib/api";
 import { toggleFollow } from "../lib/follow";
-import type { Project, ProjectDetailResponse } from "../types/project";
+import type { Project, ProjectDetailResponse, ProjectLikeResponse } from "../types/project";
 import type { User } from "../types/user";
 import "../styles/ProjectDetailPage.css";
 
@@ -25,6 +25,10 @@ export default function ProjectDetailPage() {
   const [ownerProfile, setOwnerProfile] = useState<User | null>(null);
   const [loadingOwner, setLoadingOwner] = useState(false);
   const [togglingFollow, setTogglingFollow] = useState(false);
+  const [liking, setLiking] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [postingComment, setPostingComment] = useState(false);
 
   const canToggleSave = Boolean(token);
 
@@ -52,7 +56,7 @@ export default function ProjectDetailPage() {
   }, [fetchProject]);
 
   useEffect(() => {
-    const ownerId = project?.owner && ("id" in project.owner && project.owner.id ? project.owner.id : (project.owner as unknown as { _id?: string })._id);
+    const ownerId = project?.owner?.id || (project?.owner as { _id?: string })?._id || null;
 
     if (!token || !project || project.isOwner || !ownerId) {
       setOwnerProfile(null);
@@ -113,6 +117,30 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleLikeToggle = async () => {
+    if (!project) return;
+    if (!token) {
+      setAlert({ type: "error", message: "Sign in to like projects." });
+      return;
+    }
+    if (liking) return;
+
+    try {
+      setLiking(true);
+      const response = await apiFetch<ProjectLikeResponse>(`/api/projects/${project.id}/like`, {
+        method: project.isLiked ? "DELETE" : "POST",
+        token,
+      });
+      setProject(response.project);
+      const fallbackMessage = response.project.isLiked ? "Thanks for the like!" : "Removed like.";
+      setAlert({ type: "success", message: response.message || fallbackMessage });
+    } catch (err) {
+      setAlert({ type: "error", message: err instanceof Error ? err.message : "Unable to update like state" });
+    } finally {
+      setLiking(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!project || !token || !project.isOwner) return;
     const confirmed = window.confirm("Delete this project? This action cannot be undone.");
@@ -164,6 +192,82 @@ export default function ProjectDetailPage() {
     }
   };
 
+  const handleTagNavigate = useCallback(
+    (tag: string) => {
+      const normalized = tag.startsWith("#") ? tag.slice(1) : tag;
+      if (!normalized) return;
+      navigate(`/explore?tag=${encodeURIComponent(normalized)}`);
+    },
+    [navigate]
+  );
+
+  const formatCommentTimestamp = useCallback((value: string) => {
+    if (!value) {
+      return "Just now";
+    }
+    try {
+      return new Date(value).toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+    } catch (err) {
+      return "Just now";
+    }
+  }, []);
+
+  const initialsFromName = useCallback((source?: string) => {
+    return (source || "")
+      .split(" ")
+      .filter(Boolean)
+      .map((part) => part[0]?.toUpperCase?.() || "")
+      .join("")
+      .slice(0, 2) || "?";
+  }, []);
+
+  const comments = useMemo(() => {
+    if (!project?.comments) {
+      return [] as NonNullable<Project["comments"]>;
+    }
+    return [...project.comments].sort((a, b) => {
+      const aTime = new Date(a.createdAt).getTime();
+      const bTime = new Date(b.createdAt).getTime();
+      return bTime - aTime;
+    });
+  }, [project?.comments]);
+
+  const commentCount = project?.commentCount ?? comments.length;
+
+  const handleCommentSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!project) return;
+    if (!token) {
+      setAlert({ type: "error", message: "Sign in to add a comment." });
+      return;
+    }
+    if (postingComment) {
+      return;
+    }
+
+    const trimmed = commentText.trim();
+    if (!trimmed) {
+      setCommentError("Add a comment before posting.");
+      return;
+    }
+
+    try {
+      setPostingComment(true);
+      setCommentError(null);
+      const response = await addProjectComment(project.id, trimmed, token);
+      setProject(response.project);
+      setCommentText("");
+      setAlert({ type: "success", message: response.message || "Comment added." });
+    } catch (err) {
+      setCommentError(err instanceof Error ? err.message : "Unable to add comment right now");
+    } finally {
+      setPostingComment(false);
+    }
+  };
+
   if (loading) {
     return (
       <main className="page-shell">
@@ -190,7 +294,6 @@ export default function ProjectDetailPage() {
 
   const galleryItems = (project.gallery || []).filter((item): item is string => Boolean(item));
   const hero = resolveMediaUrl(project.heroImage || galleryItems[0]);
-  const reactions = project.reactions || { applause: 0, curiosity: 0, interest: 0 };
   const updatedDate = new Date(project.updatedAt);
   const lastUpdated = Number.isNaN(updatedDate.getTime())
     ? "Unknown"
@@ -254,6 +357,19 @@ export default function ProjectDetailPage() {
           </div>
 
           <div className="project-detail__actions">
+            <button
+              type="button"
+              className={`project-detail__like${project.isLiked ? " is-liked" : ""}`}
+              onClick={handleLikeToggle}
+              disabled={liking}
+              aria-pressed={project.isLiked}
+            >
+              <span aria-hidden className={`project-detail__like-heart${project.isLiked ? " is-liked" : ""}`}>
+                ❤
+              </span>
+              <strong>{project.likesCount}</strong>
+              <span className="project-detail__like-label">{project.likesCount === 1 ? "Like" : "Likes"}</span>
+            </button>
             {canToggleSave && (
               <button
                 type="button"
@@ -297,7 +413,9 @@ export default function ProjectDetailPage() {
               <h2>Tech stack</h2>
               <div className="project-detail__tags">
                 {project.tags.map((tag) => (
-                  <span key={tag}>{tag}</span>
+                  <button key={tag} type="button" onClick={() => handleTagNavigate(tag)}>
+                    {tag.startsWith("#") ? tag : `#${tag}`}
+                  </button>
                 ))}
               </div>
             </div>
@@ -342,18 +460,83 @@ export default function ProjectDetailPage() {
           ) : null}
         </section>
 
+        <section className="project-detail__comments">
+          <div className="project-detail__comments-head">
+            <h2>Comments</h2>
+            <span>{commentCount === 1 ? "1 comment" : `${commentCount} comments`}</span>
+          </div>
+
+          {token ? (
+            <form className="project-detail__comment-form" onSubmit={handleCommentSubmit}>
+              <textarea
+                id="project-comment-input"
+                value={commentText}
+                onChange={(event) => {
+                  setCommentText(event.target.value);
+                  if (commentError) {
+                    setCommentError(null);
+                  }
+                }}
+                placeholder="Share feedback, ask a question, or cheer on the builder."
+                rows={3}
+                maxLength={2000}
+                disabled={postingComment}
+                aria-label="Add a comment"
+              />
+              {commentError ? <div className="project-detail__comment-error">{commentError}</div> : null}
+              <div className="project-detail__comment-actions">
+                <button type="submit" className="page-button primary" disabled={postingComment}>
+                  {postingComment ? "Posting…" : "Post comment"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="project-detail__comment-auth">
+              <p>Sign in to join the discussion.</p>
+              <button type="button" className="page-button secondary" onClick={() => navigate("/login")}>Sign in</button>
+            </div>
+          )}
+
+          <ul className="project-detail__comment-list">
+            {comments.length ? (
+              comments.map((comment) => {
+                const avatar = resolveMediaUrl(comment.author?.avatar);
+                const displayName = comment.author?.name || comment.author?.username || "Builder";
+                const username = comment.author?.username || "anon";
+                return (
+                  <li key={comment.id} className="project-detail__comment">
+                    <div className="project-detail__comment-avatar">
+                      {avatar ? (
+                        <img src={avatar} alt="" loading="lazy" />
+                      ) : (
+                        <span>{initialsFromName(displayName)}</span>
+                      )}
+                    </div>
+                    <div className="project-detail__comment-body">
+                      <div className="project-detail__comment-meta">
+                        <strong>{displayName}</strong>
+                        <span>@{username}</span>
+                        <time dateTime={comment.createdAt}>{formatCommentTimestamp(comment.createdAt)}</time>
+                      </div>
+                      <p>{comment.body}</p>
+                    </div>
+                  </li>
+                );
+              })
+            ) : (
+              <li className="project-detail__comment-empty">Be the first to leave a comment.</li>
+            )}
+          </ul>
+        </section>
+
         <section className="project-detail__meta">
           <div>
-            <h3>Applause</h3>
-            <strong>{reactions.applause}</strong>
+            <h3>Likes</h3>
+            <strong>{project.likesCount}</strong>
           </div>
           <div>
-            <h3>Curiosity</h3>
-            <strong>{reactions.curiosity}</strong>
-          </div>
-          <div>
-            <h3>Interest</h3>
-            <strong>{reactions.interest}</strong>
+            <h3>Comments</h3>
+            <strong>{commentCount}</strong>
           </div>
           <div>
             <h3>Last updated</h3>

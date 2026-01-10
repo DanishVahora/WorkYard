@@ -1,0 +1,11 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Avatar placeholder">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5b400" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#111827" stop-opacity="0.9" />
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#grad)" />
+  <circle cx="60" cy="46" r="26" fill="#fff" opacity="0.9" />
+  <rect x="22" y="72" width="76" height="34" rx="18" fill="#fff" opacity="0.9" />
+</svg>

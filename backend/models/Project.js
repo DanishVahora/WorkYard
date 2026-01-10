@@ -16,6 +16,36 @@ const projectSchema = new mongoose.Schema(
       default: [],
       validate: (values) => values.length <= 20,
     },
+    objective: { type: String, trim: true, maxlength: 4000 },
+    problemStatement: { type: String, trim: true, maxlength: 6000 },
+    solutionOverview: { type: String, trim: true, maxlength: 6000 },
+    successMetrics: { type: String, trim: true, maxlength: 4000 },
+    keyFeatures: {
+      type: [String],
+      default: [],
+      validate: (values) => values.length <= 20,
+    },
+    collaborators: {
+      type: [String],
+      default: [],
+      validate: (values) => values.length <= 20,
+    },
+    roadmap: {
+      type: [
+        new mongoose.Schema(
+          {
+            title: { type: String, required: true, trim: true, maxlength: 160 },
+            description: { type: String, trim: true, maxlength: 1000 },
+            targetDate: { type: Date },
+          },
+          { _id: false }
+        ),
+      ],
+      default: [],
+      validate: (values) => values.length <= 12,
+    },
+    budget: { type: String, trim: true, maxlength: 200 },
+    callToAction: { type: String, trim: true, maxlength: 400 },
     status: {
       type: String,
       enum: ["draft", "published", "archived"],
@@ -31,6 +61,24 @@ const projectSchema = new mongoose.Schema(
       type: [String],
       default: [],
       validate: (values) => values.length <= 12,
+    },
+    comments: {
+      type: [
+        new mongoose.Schema(
+          {
+            author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+            body: { type: String, required: true, trim: true, maxlength: 2000 },
+            createdAt: { type: Date, default: Date.now },
+          },
+          { _id: true }
+        ),
+      ],
+      default: [],
+      validate: (values) => values.length <= 200,
+    },
+    likedBy: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+      default: [],
     },
     lastActivityAt: { type: Date, default: Date.now },
     reactions: {

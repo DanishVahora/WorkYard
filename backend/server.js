@@ -1,8 +1,10 @@
+const http = require("http");
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const connectDB = require("./config/db");
+const { attachSocket } = require("./realtime/socket");
 
 dotenv.config();
 connectDB();
@@ -20,6 +22,8 @@ app.get("/", (req, res) => {
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/projects", require("./routes/project.routes"));
 app.use("/api/users", require("./routes/user.routes"));
+app.use("/api/notifications", require("./routes/notification.routes"));
+app.use("/api/messages", require("./routes/message.routes"));
 
 app.use((err, _req, res, _next) => {
   console.error("Unhandled error", err);
@@ -35,7 +39,10 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ message: err?.message || "Internal server error" });
 });
 
+const server = http.createServer(app);
+attachSocket(server);
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () =>
+server.listen(PORT, () =>
   console.log(`Server running on port ${PORT}`)
 );
